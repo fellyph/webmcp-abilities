@@ -1,0 +1,29 @@
+name: PR Preview - Build
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  build:
+    uses: WordPress/action-wp-playground-pr-preview/.github/workflows/preview-build.yml@v4
+    with:
+      artifacts: webmcp-abilities=build/webmcp-abilities.zip
+      node-version: '20'
+      build-command: |
+        set -euo pipefail
+        npm install -g pnpm@9
+        pnpm install --frozen-lockfile
+        pnpm run build
+
+        # Package only the files the plugin ships, inside a stable folder name.
+        mkdir -p stage/webmcp-abilities build
+        rsync -a \
+          --exclude='.git' --exclude='.github' --exclude='.wordpress-assets' \
+          --exclude='node_modules' --exclude='vendor' --exclude='tests' --exclude='src' \
+          --exclude='build' --exclude='stage' \
+          --exclude='.*' --exclude='*.lock' --exclude='pnpm-lock.yaml' \
+          --exclude='package.json' --exclude='composer.json' --exclude='tsconfig.json' \
+          --exclude='webpack.config.js' --exclude='phpcs.xml.dist' --exclude='phpunit.xml' \
+          ./ stage/webmcp-abilities/
+        ( cd stage && zip -rq ../build/webmcp-abilities.zip webmcp-abilities )

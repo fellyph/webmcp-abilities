@@ -1,0 +1,28 @@
+name: PR Preview - Publish
+
+on:
+  workflow_run:
+    workflows: ["PR Preview - Build"]
+    types: [completed]
+
+jobs:
+  publish:
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: WordPress/action-wp-playground-pr-preview/.github/workflows/preview-publish.yml@v4
+    with:
+      blueprint: |
+        {
+          "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+          "landingPage": "/wp-admin/options-general.php?page=webmcp-abilities",
+          "preferredVersions": { "php": "8.2", "wp": "latest" },
+          "steps": [
+            { "step": "login", "username": "admin" },
+            {
+              "step": "installPlugin",
+              "pluginData": { "resource": "url", "url": "{{ARTIFACT_URL:webmcp-abilities}}" },
+              "options": { "activate": true }
+            }
+          ]
+        }
